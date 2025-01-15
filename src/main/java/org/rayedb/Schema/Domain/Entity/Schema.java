@@ -2,7 +2,6 @@ package org.rayedb.Schema.Domain.Entity;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.mongodb.lang.Nullable;
 
 public class Schema {
     private String slug;

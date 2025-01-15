@@ -24,8 +24,11 @@ import java.util.Date;
 import java.time.ZoneId;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
+// CREATE NEW SQLSCHEMAREPOSITORY
+
 @ApplicationScoped
-class MongoSchemaRepository implements SchemaRepository {
+class MongoSchemaRepository implements SchemaRepository <Schema, String> {
     private final MongoClient mongoClient;
     private final String databaseName;
     private final ObjectMapper objectMapper;
@@ -45,6 +48,7 @@ class MongoSchemaRepository implements SchemaRepository {
         return mongoClient.getDatabase(databaseName).getCollection(COLLECTION_NAME);
     }
 
+    @Override
     public Schema create(Schema schema) {
         Document doc = new Document()
             .append("slug", schema.getSlug())
@@ -57,10 +61,10 @@ class MongoSchemaRepository implements SchemaRepository {
         return schema;
     }
 
+    @Override
     public Schema get(String slug) {
-        Document doc = getCollection().find(new Document("slug", slug)).first();
+        Document doc = getCollection().find(new Document("slug", slug).append("latest", true)).first();
         if (doc == null) return null;
-        
         return new Schema(
             doc.getString("slug"),
             ((Date) doc.get("createdAt")).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
@@ -70,6 +74,12 @@ class MongoSchemaRepository implements SchemaRepository {
         );
     }
 
+    // USE JAVA STREAM API
+    // BULK OF XML ITEMS AND STREAM THROUGH THAT
+    // MANUAL VALIDATION AS WELL
+    // (Streaming and lambda)
+
+    @Override
     public Schema update(Schema schema) {
         String slug = schema.getSlug();
         List<WriteModel<Document>> operations = Arrays.asList(
@@ -79,13 +89,12 @@ class MongoSchemaRepository implements SchemaRepository {
             ),
             new InsertOneModel<>(
                 new Document("slug", slug)
-                    .append("createdAt", schema.getCreatedAt())
+                    .append("createdAt", Date.from(schema.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()))
                     .append("version", schema.getVersion())
                     .append("latest", true)
-                    .append("schemaDefinition", schema.getSchemaDefinition())
+                    .append("schemaDefinition", objectMapper.convertValue(schema.getSchemaDefinition(), Document.class))
             )
         );
-
         try {
             getCollection().bulkWrite(operations);
         } catch (MongoException e) {
@@ -94,15 +103,15 @@ class MongoSchemaRepository implements SchemaRepository {
         return schema;
     }
 
+    @Override
     public void delete(String slug) {
         getCollection().deleteOne(new Document("slug", slug));
     }
 
+    @Override
     public List<Schema> getAll() {
-        System.out.println("doc");
         List<Schema> schemas = new ArrayList<>();
         for (Document doc : getCollection().find()) {  
-            System.out.println(doc);
             schemas.add(new Schema(
                 doc.getString("slug"),
                 ((Date) doc.get("createdAt")).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
@@ -111,7 +120,6 @@ class MongoSchemaRepository implements SchemaRepository {
                 objectMapper.convertValue(doc.get("schemaDefinition"), JsonNode.class)
             ));
         }
-        System.out.println(schemas);
         return schemas;
     }
 }
