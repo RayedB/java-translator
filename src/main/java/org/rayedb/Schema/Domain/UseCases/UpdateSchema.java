@@ -10,14 +10,15 @@ import com.mongodb.lang.Nullable;
 
 @ApplicationScoped
 public class UpdateSchema {
-    private final SchemaRepository schemaRepository;
+    private final SchemaRepository<Schema, String> schemaRepository;
     @Inject
-    public UpdateSchema(SchemaRepository schemaRepository) {
+    public UpdateSchema(SchemaRepository<Schema, String> schemaRepository) {
         this.schemaRepository = schemaRepository;
     }   
 
     public Schema handle(String slug, JsonNode schemaDefinition) {
         Schema schema = schemaRepository.get(slug);
+
         String updatedVersion = generateVersion(schema.getVersion(), false);
         schema.setVersion(updatedVersion);
         schema.setSchemaDefinition(schemaDefinition);

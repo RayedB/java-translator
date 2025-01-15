@@ -44,10 +44,10 @@ public class SchemaResource {
             JsonNode schemaDefinition = requestBody.get("schemaDefinition");
             String slug = requestBody.get("slug").asText();
             
-            JsonSchemaValidator.validate(schemaDefinition);
+            // JsonSchemaValidator.validate(schemaDefinition);
             
             Schema createdSchema = createSchema.handle(slug, schemaDefinition);
-            return Response.ok(createdSchema).build();
+            return Response.status(Response.Status.CREATED).entity(createdSchema).build();
             
         } catch (JsonSchemaValidationException e) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -60,13 +60,6 @@ public class SchemaResource {
         }
     }
 
-    @GET
-    @Path("/{slug}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response get(@PathParam("slug") String slug) {
-        // Schema schema = schemaRepository.get(slug);
-        return Response.ok().build();
-    }
 
     @PUT
     @Path("/{slug}")

@@ -86,3 +86,5 @@ public class CreateSchemaTest {
         assertTrue(result.getSchemaDefinition().get("properties").isEmpty());
     }
 }
+
+// TEST REPOSITORY 

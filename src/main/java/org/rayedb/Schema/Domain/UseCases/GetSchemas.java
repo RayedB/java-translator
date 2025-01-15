@@ -10,9 +10,9 @@ import org.rayedb.Schema.Domain.Interface.SchemaRepository;
 
 @ApplicationScoped
 public class GetSchemas {
-    private final SchemaRepository schemaRepository;
+    private final SchemaRepository<Schema, String> schemaRepository;
     @Inject
-    public GetSchemas(SchemaRepository schemaRepository) {
+    public GetSchemas(SchemaRepository<Schema, String> schemaRepository) {
         this.schemaRepository = schemaRepository;
     }
 

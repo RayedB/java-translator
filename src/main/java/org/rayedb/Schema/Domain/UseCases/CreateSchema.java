@@ -8,17 +8,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @ApplicationScoped
 public class CreateSchema {
-    private final SchemaRepository schemaRepository;
+    private final SchemaRepository<Schema, String> schemaRepository;
 
     @Inject
-    public CreateSchema(SchemaRepository schemaRepository) {
+    public CreateSchema(SchemaRepository<Schema, String> schemaRepository) {
         this.schemaRepository = schemaRepository;
     }
 
     public Schema handle(String slug, JsonNode schemaDefinition) {
         
         Schema schema = Schema.create(slug, schemaDefinition);
-        
         return schemaRepository.create(schema);
     }
 

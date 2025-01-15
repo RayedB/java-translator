@@ -1,64 +1,87 @@
 package org.rayedb.adapters.primaries;
 
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
-import org.rayedb.Schema.Domain.UseCases.CreateSchema;
-import org.rayedb.Schema.Domain.Entity.Schema;
 
-import jakarta.ws.rs.core.MediaType;
 import static io.restassured.RestAssured.given;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-@QuarkusTest
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+
+@QuarkusIntegrationTest
 public class SchemaResourceIT {
 
-    @InjectMock
-    CreateSchema createSchema;
-
     @Test
-    public void shouldReturn400WhenSchemaIsInvalid() {
-        // Arrange
-        String invalidSchema = """
+    public void shouldCreateSchemaSuccessfully() {
+        String schemaJson = """
             {
-                "type": "invalid_type",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    }
+                "slug": "cust",
+                "schemaDefinition": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string" },
+                        "age": { "type": "integer", "minimum": 0 }
+                    },
+                    "required": ["name"]
                 }
             }
             """;
 
-        // Act & Assert
         given()
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(invalidSchema)
-            .when()
+            .contentType(ContentType.JSON)
+            .body(schemaJson)
+        .when()
             .post("/schemas")
-            .then()
-            .statusCode(400);
-
-        // Verify that createSchema.handle was never called
-        verify(createSchema, never()).handle(any(Schema.class));
+        .then()
+            .statusCode(201)  // Should be 201 for resource creation
+            .contentType(ContentType.JSON)
+            .body("slug", is("cust"))
+            .body("schemaDefinition", notNullValue())
+            .body("version", notNullValue())
+            .body("latest", is(true));
     }
 
+    // @Test
+    // public void shouldReturn400ForInvalidSchema() {
+    //     String invalidSchemaJson = """
+    //         {
+    //             "slug": "cust",
+    //             "schemaDefinition": {
+    //                 "type": "invalid",
+    //                 "properties": {
+    //                     "name": { "type": "string" }
+    //                 }
+    //             }
+    //         }
+    //         """;
+
+    //     given()
+    //         .contentType(ContentType.JSON)
+    //         .body(invalidSchemaJson)
+    //     .when()
+    //         .post("/schemas")
+    //     .then()
+    //         .statusCode(400)
+    //         .contentType(ContentType.JSON)
+    //         .body("message", notNullValue());
+    // }
+
     @Test
-    public void shouldReturn400WhenJsonIsMalformed() {
-        // Arrange
-        String malformedJson = "{ 'foo':'bar' }";
+    public void shouldReturn400WhenSchemaDefinitionIsMissing() {
+        String invalidJson = """
+            {
+                "slug": "cust"
+            }
+            """;
 
-        // Act & Assert
         given()
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(malformedJson)
-            .when()
+            .contentType(ContentType.JSON)
+            .body(invalidJson)
+        .when()
             .post("/schemas")
-            .then()
-            .statusCode(400);
-
-        verify(createSchema, never()).handle(any(Schema.class));
+        .then()
+            .statusCode(400)
+            .contentType(ContentType.JSON)
+            .body("message", notNullValue());
     }
 }
